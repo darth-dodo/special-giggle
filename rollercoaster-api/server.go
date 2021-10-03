@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -17,6 +18,21 @@ type coasterHandlers struct {
 	store map[string]Coaster
 }
 
+func (h *coasterHandlers) coasters(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+		h.get(w, r)
+		return
+
+	case "POST":
+		h.post(w, r)
+		return
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		w.Write([]byte("method not allowed"))
+	}
+}
+
 func (h *coasterHandlers) get(w http.ResponseWriter, r *http.Request) {
 
 	coasters := make([]Coaster, len(h.store))
@@ -30,10 +46,18 @@ func (h *coasterHandlers) get(w http.ResponseWriter, r *http.Request) {
 	jsonBytes, err := json.Marshal(coasters)
 
 	if err != nil {
-		panic(err)
+		fmt.Printf(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
 	}
 
+	w.Header().Add("content-type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	w.Write(jsonBytes)
+
+}
+
+func (h *coasterHandlers) post(w http.ResponseWriter, r *http.Request) {
 
 }
 
@@ -54,9 +78,9 @@ func main() {
 
 	coasterHandlers := newCoasterHandlers()
 
-	http.HandleFunc("/coasters", coasterHandlers.get)
+	http.HandleFunc("/coasters", coasterHandlers.coasters)
 
-	err := http.ListenAndServe(":8080", nil)
+	err := http.ListenAndServe("localhost:8080", nil)
 	if err != nil {
 		panic(err)
 	}
