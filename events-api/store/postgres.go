@@ -22,7 +22,8 @@ func NewPostgresEventStore(conn string) EventStore {
 	// create database connection
 	db, err := gorm.Open(postgres.Open(conn),
 		&gorm.Config{
-			Logger: logger.New(log.new(os.Stdout, "", log.LstdFlags),
+			Logger: logger.New(
+				log.New(os.Stdout, "", log.LstdFlags),
 				logger.Config{
 					LogLevel: logger.Info,
 					Colorful: true,
@@ -43,8 +44,8 @@ func NewPostgresEventStore(conn string) EventStore {
 	return &pg{db: db}
 }
 
-func (p *pg) Get(ctx context.Cotext, in *objects.GetRequest) (*objects.Event, error) {
-	event = &objects.Event{}
+func (p *pg) Get(ctx context.Context, in *objects.GetRequest) (*objects.Event, error) {
+	evt := &objects.Event{}
 
 	// event where id == uid from db
 	err := p.db.WithContext(ctx).Take(evt, "id = ?", in.ID).Error
@@ -54,10 +55,10 @@ func (p *pg) Get(ctx context.Cotext, in *objects.GetRequest) (*objects.Event, er
 		return nil, errors.ErrEventNotFound
 	}
 
-	return event, err
+	return evt, err
 }
 
-func (p *pg) List(ctx context.Cotext, in *objects.GetRequest) ([]*objects.Event, error) {
+func (p *pg) List(ctx context.Context, in *objects.ListRequest) ([]*objects.Event, error) {
 
 	if in.Limit == 0 || in.Limit > objects.MaxListLimit {
 		in.Limit = objects.MaxListLimit
@@ -88,11 +89,13 @@ func (p *pg) Create(ctx context.Context, in *objects.CreateRequest) error {
 	in.Event.ID = GenerateUniqueID()
 	in.Event.Status = objects.Original
 	in.Event.CreatedOn = p.db.NowFunc()
-	return p.db.WithContext(ctx).Create(in.Event).Error
+	return p.db.WithContext(ctx).
+		Create(in.Event).
+		Error
 }
 
-func (p *pg) Update(ctx context.Cotext, in *objects.UpdateRequest) error {
-	event := &objects.Event{
+func (p *pg) Update(ctx context.Context, in *objects.UpdateRequest) error {
+	evt := &objects.Event{
 		ID:          in.ID,
 		Name:        in.Name,
 		Description: in.Description,
@@ -102,17 +105,17 @@ func (p *pg) Update(ctx context.Cotext, in *objects.UpdateRequest) error {
 		UpdatedOn:   p.db.NowFunc(),
 	}
 
-	return p.db.WithContext(ctx).Model(event).Select("name", "description", "website", "address", "phone_number", "updated_on").Updates(event).Error
+	return p.db.WithContext(ctx).Model(evt).Select("name", "description", "website", "address", "phone_number", "updated_on").Updates(evt).Error
 }
 
-func (p *pg) Cancel(ctx context.Cotext, in *objects.CancelRequest) error {
-	event = &objects.Event{
+func (p *pg) Cancel(ctx context.Context, in *objects.CancelRequest) error {
+	evt := &objects.Event{
 		ID:          in.ID,
 		Status:      objects.Cancelled,
 		CancelledOn: p.db.NowFunc(),
 	}
 
-	return p.db.WithContext(ctx).Model(event).Select("status", "cancelled_on").Updates(event).Error
+	return p.db.WithContext(ctx).Model(evt).Select("status", "cancelled_on").Updates(evt).Error
 }
 
 func (p *pg) Reschedule(ctx context.Context, in *objects.RescheduleRequest) error {

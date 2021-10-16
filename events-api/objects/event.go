@@ -22,11 +22,11 @@ type TimeSlot struct {
 type Event struct {
 	ID string `gorm:"primary_key" json:"id,omitempty"`
 
-	Name        string `json:"end_time,omitempty"`
-	Description string `json:"end_time,omitempty"`
-	Website     string `json:"end_time,omitempty"`
-	Address     string `json:"end_time,omitempty"`
-	PhoneNumber string `json:"end_time,omitempty"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Website     string `json:"website"`
+	Address     string `json:"address,omitempty"`
+	PhoneNumber string `json:"phone_number,omitempty"`
 
 	// Slot duration
 	Slot *TimeSlot `gorm:"embedded" json:"slot,omitempty"`
@@ -35,7 +35,8 @@ type Event struct {
 	Status EventStatus `json:"status,omitempty"`
 
 	// Meta information
-	CreatedOn   time.Time `json:"created_on,omitempty"`
-	UpdatedOn   time.Time `json:"updated_on,omitempty"`
-	CancelledOn time.Time `json:"cancelled_on,omitempty"`
+	CreatedOn     time.Time `json:"created_on,omitempty"`
+	UpdatedOn     time.Time `json:"updated_on,omitempty"`
+	CancelledOn   time.Time `json:"cancelled_on,omitempty"`
+	RescheduledOn time.Time `json:"rescheduled_on,omitempty"`
 }

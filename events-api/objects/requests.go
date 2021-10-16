@@ -15,9 +15,9 @@ type GetRequest struct {
 
 // List request
 type ListRequest struct {
-	Limit int `json:"limit"`
-	After int `json:"after"`
-	Name  int `json:"name"`
+	Limit int    `json:"limit"`
+	After string `json:"after"`
+	Name  string `json:"name"`
 }
 
 // Create request
@@ -60,7 +60,7 @@ func (e *EventResponseWrapper) JSON() []byte {
 		return []byte("{}")
 	}
 
-	res, _ := json.Marshall(e)
+	res, _ := json.Marshal(e)
 	return res
 }
 
