@@ -3,6 +3,12 @@ module github.com/darth-dodo/special-giggle/events-api
 go 1.17
 
 require (
+	github.com/gorilla/mux v1.8.0
+	gorm.io/driver/postgres v1.1.2
+	gorm.io/gorm v1.21.15
+)
+
+require (
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.10.0 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
@@ -15,6 +21,4 @@ require (
 	github.com/jinzhu/now v1.1.2 // indirect
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
 	golang.org/x/text v0.3.7 // indirect
-	gorm.io/driver/postgres v1.1.2 // indirect
-	gorm.io/gorm v1.21.15 // indirect
 )

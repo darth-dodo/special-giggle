@@ -61,7 +61,7 @@ var (
 // Error main object for error
 type Error struct {
 	Code    int
-	Message str
+	Message string
 }
 
 // creating a method on the interface of error to return the error string method
@@ -74,7 +74,7 @@ func (err *Error) String() string {
 		return ""
 	}
 
-	return fmt.Sprintf("error: code=%s message=%s", htt.StatusText(err.Code), err.Message)
+	return fmt.Sprintf("error: code=%s message=%s", http.StatusText(err.Code), err.Message)
 }
 
 // Convert error into JSON
@@ -83,14 +83,14 @@ func (err *Error) JSON() []byte {
 		return []byte("{}")
 	}
 
-	res, _ := json.Marshall(err)
+	res, _ := json.Marshal(err)
 	return res
 }
 
 // Get Status Code
 func (err *Error) StatusCode() int {
 	if err == nil {
-		return http.StatusOk
+		return http.StatusOK
 	}
 
 	return err.Code

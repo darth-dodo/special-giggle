@@ -1,7 +1,12 @@
 package handlers
 
 import (
+	"io/ioutil"
 	"net/http"
+
+	"github.com/darth-dodo/special-giggle/events-api/errors"
+	"github.com/darth-dodo/special-giggle/events-api/objects"
+	"github.com/darth-dodo/special-giggle/events-api/store"
 )
 
 type EventHandler interface {
@@ -9,44 +14,195 @@ type EventHandler interface {
 	List(w http.ResponseWriter, r *http.Request)
 	Create(w http.ResponseWriter, r *http.Request)
 	Update(w http.ResponseWriter, r *http.Request)
-	CancelEvent(w http.ResponseWriter, r *http.Request)
-	RescheduleEvent(w http.ResponseWriter, r *http.Request)
+	Cancel(w http.ResponseWriter, r *http.Request)
+	Reschedule(w http.ResponseWriter, r *http.Request)
 	Delete(w http.ResponseWriter, r *http.Request)
 }
 
 type handler struct {
+	store store.EventStore
 }
 
 // NewEventHandler returns current interface EventHandler implementation
 
-func NewEventHandler() EventHandler {
-	return &handler{}
+func NewEventHandler(store store.EventStore) EventHandler {
+	return &handler{store: store}
 }
 
 func (h *handler) Get(w http.ResponseWriter, r *http.Request) {
-	panic("todo")
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		WriteError(w, errors.ErrValidEventIDIsRequired)
+		return
+	}
+
+	evt, err := h.store.Get(r.Context(), &objects.GetRequest{ID: id})
+
+	if err != nil {
+		WriteError(w, err)
+		return
+	}
+
+	WriteResponse(w, &objects.EventResponseWrapper{Event: evt})
+
 }
 
 func (h *handler) List(w http.ResponseWriter, r *http.Request) {
-	panic("todo")
+	values := r.URL.Query()
+
+	//after
+	after := values.Get("after")
+
+	//name
+	name := values.Get("name")
+
+	//limit
+	limit, err := IntFromString(w, values.Get("limit"))
+
+	if err != nil {
+		return
+	}
+
+	//list events
+
+	list, err := h.store.List(r.Context(), &objects.ListRequest{
+		Limit: limit,
+		After: after,
+		Name:  name,
+	})
+
+	if err != nil {
+		WriteError(w, err)
+		return
+	}
+
+	WriteResponse(w, &objects.EventResponseWrapper{Events: list})
 }
 
 func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
-	panic("todo")
+	data, err := ioutil.ReadAll(r.Body)
+
+	if err != nil {
+		WriteError(w, errors.ErrUnprocessableEntity)
+		return
+	}
+
+	evt := &objects.Event{}
+	if Unmarshal(w, data, evt) != nil {
+		return
+	}
+
+	if err := checkSlot(evt.Slot); err != nil {
+		WriteError(w, err)
+		return
+	}
+
+	if err = h.store.Create(r.Context(), &objects.CreateRequest{Event: evt}); err != nil {
+		WriteError(w, err)
+		return
+	}
+
+	WriteResponse(w, &objects.EventResponseWrapper{Event: evt})
 }
 
 func (h *handler) Update(w http.ResponseWriter, r *http.Request) {
-	panic("todo")
+	data, err := ioutil.ReadAll(r.Body)
+
+	if err != nil {
+		WriteError(w, errors.ErrUnprocessableEntity)
+		return
+	}
+
+	req := &objects.UpdateRequest{}
+	if Unmarshal(w, data, req) != nil {
+		return
+	}
+
+	//check if event exists
+	if _, err := h.store.Get(r.Context(), &objects.GetRequest{ID: req.ID}); err != nil {
+		WriteError(w, err)
+		return
+	}
+
+	if err = h.store.Update(r.Context(), req); err != nil {
+		WriteError(w, err)
+		return
+	}
+
+	WriteResponse(w, &objects.EventResponseWrapper{})
+
 }
 
-func (h *handler) RescheduleEvent(w http.ResponseWriter, r *http.Request) {
-	panic("todo")
+func (h *handler) Cancel(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		WriteError(w, errors.ErrValidEventIDIsRequired)
+		return
+	}
+
+	//check if event exist
+	if _, err := h.store.Get(r.Context(), &objects.GetRequest{ID: id}); err != nil {
+		WriteError(w, err)
+		return
+	}
+
+	if err := h.store.Cancel(r.Context(), &objects.CancelRequest{ID: id}); err != nil {
+		WriteError(w, err)
+		return
+	}
+
+	WriteResponse(w, &objects.EventResponseWrapper{})
+}
+
+func (h *handler) Reschedule(w http.ResponseWriter, r *http.Request) {
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		WriteError(w, errors.ErrUnprocessableEntity)
+		return
+	}
+
+	req := &objects.RescheduleRequest{}
+	if Unmarshal(w, data, req) != nil {
+		return
+	}
+
+	if err := checkSlot(req.NewSlot); err != nil {
+		WriteError(w, err)
+		return
+	}
+
+	//check if event exist
+	if _, err := h.store.Get(r.Context(), &objects.GetRequest{ID: req.ID}); err != nil {
+		WriteError(w, err)
+		return
+	}
+
+	if err = h.store.Reschedule(r.Context(), req); err != nil {
+		WriteError(w, err)
+		return
+	}
+
+	WriteResponse(w, &objects.EventResponseWrapper{})
 }
 
 func (h *handler) Delete(w http.ResponseWriter, r *http.Request) {
-	panic("todo")
-}
+	id := r.URL.Query().Get("id")
 
-func (h *handler) CancelEvent(w http.ResponseWriter, r *http.Request) {
-	panic("todo")
+	if id == "" {
+		WriteError(w, errors.ErrValidEventIDIsRequired)
+		return
+	}
+
+	// check if event exist
+	if _, err := h.store.Get(r.Context(), &objects.GetRequest{ID: id}); err != nil {
+		WriteError(w, err)
+		return
+	}
+
+	if err := h.store.Delete(r.Context(), &objects.DeleteRequest{ID: id}); err != nil {
+		WriteError(w, err)
+		return
+	}
+
+	WriteResponse(w, &objects.EventResponseWrapper{})
 }
