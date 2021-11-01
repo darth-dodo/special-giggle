@@ -1,10 +1,23 @@
 version: '3'
-services: 
+services:
     app :
-        build: 
+        build:
             context: .
             dockerfile: ./docker/app/Dockerfile
         env_file:
             - ./docker/app/.env
-        ports: 
+        ports:
             - "8080:8080"
+        depends_on:
+            - db
+
+    db:
+        build: ./docker/mariadb/
+        environment:
+            MYSQL_ROOT_PASSWORD: books_api_root_pass
+            MYSQL_DATABASE: books_api_db
+            MYSQL_USER: books_api_user
+            MYSQL_PASSWORD: books_api_pass
+        ports:
+            - 3306:3306
+        restart: always
