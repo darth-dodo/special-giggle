@@ -1,4 +1,5 @@
 package requestlog
+
 import (
 	"errors"
 	"io"
@@ -6,22 +7,24 @@ import (
 	"net/http"
 	"time"
 )
+
 type logEntry struct {
-	ReceivedTime      time.Time
-	RequestMethod     string
-	RequestURL        string
-	RequestHeaderSize int64
-	RequestBodySize   int64
-	UserAgent         string
-	Referer           string
-	Proto             string
-	RemoteIP string
-	ServerIP string
+	ReceivedTime       time.Time
+	RequestMethod      string
+	RequestURL         string
+	RequestHeaderSize  int64
+	RequestBodySize    int64
+	UserAgent          string
+	Referer            string
+	Proto              string
+	RemoteIP           string
+	ServerIP           string
 	Status             int
 	ResponseHeaderSize int64
 	ResponseBodySize   int64
 	Latency            time.Duration
 }
+
 func ipFromHostPort(hp string) string {
 	h, _, err := net.SplitHostPort(hp)
 	if err != nil {
@@ -32,11 +35,13 @@ func ipFromHostPort(hp string) string {
 	}
 	return h
 }
+
 type readCounterCloser struct {
 	r   io.ReadCloser
 	n   int64
 	err error
 }
+
 func (rcc *readCounterCloser) Read(p []byte) (n int, err error) {
 	if rcc.err != nil {
 		return 0, rcc.err
@@ -49,7 +54,9 @@ func (rcc *readCounterCloser) Close() error {
 	rcc.err = errors.New("read from closed reader")
 	return rcc.r.Close()
 }
+
 type writeCounter int64
+
 func (wc *writeCounter) Write(p []byte) (n int, err error) {
 	*wc += writeCounter(len(p))
 	return len(p), nil
@@ -59,12 +66,14 @@ func headerSize(h http.Header) int64 {
 	h.Write(&wc)
 	return int64(wc) + 2 // for CRLF
 }
+
 type responseStats struct {
 	w     http.ResponseWriter
 	hsize int64
 	wc    writeCounter
 	code  int
 }
+
 func (r *responseStats) Header() http.Header {
 	return r.w.Header()
 }

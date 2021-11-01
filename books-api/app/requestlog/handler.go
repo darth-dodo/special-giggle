@@ -1,16 +1,19 @@
 package requestlog
+
 import (
+	"github.com/darth-dodo/special-giggle/books-api/util/logger"
 	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"time"
-	"github.com/darth-dodo/special-giggle/books-api/util/logger"
 )
+
 type Handler struct {
 	handler http.Handler
 	logger  *logger.Logger
 }
+
 func NewHandler(h http.HandlerFunc, l *logger.Logger) *Handler {
 	return &Handler{
 		handler: h,
